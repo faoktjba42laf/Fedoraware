@@ -142,6 +142,83 @@ bool CAimbotProjectile::CalcProjAngle(const Vec3& vLocalPos, const Vec3& vTarget
 	return true;
 }
 
+
+Vector CAimbotProjectile::EstimateProjectileImpactPosition(float pitch, float yaw, float initvel)
+{
+	
+	const auto& pLocal = g_EntityCache.GetLocal();
+	Vector vecForward, vecRight, vecUp;
+	QAngle angles(pitch, yaw, 0.0f);
+	Math::AngleVectors(angles, &vecForward, &vecRight, &vecUp);
+
+	// we will assume bots never flip viewmodels
+	float fRight = 8.f;
+	Vector vecSrc = pLocal->GetShootPos();
+	vecSrc += vecForward * 16.0f + vecRight * fRight + vecUp * -6.0f;
+
+	const float initVelScale = 0.9f;
+	Vec3 vecVelocity = ((vecForward * initvel) - (vecUp * 200.0f)) * initVelScale;
+
+	const float timeStep = 0.01f;
+	const float maxTime = 5.0f;
+
+	Vector pos = vecSrc;
+	Vector lastPos = pos;
+	const float g = g_ConVars.sv_gravity->GetFloat();
+
+
+	// compute forward facing unit vector in horiz plane
+	Vector alongDir = vecForward;
+	alongDir.z = 0.0f;
+	alongDir.NormalizeInPlace();
+
+	float alongVel = Math::FastSqrt(vecVelocity.x * vecVelocity.x + vecVelocity.y * vecVelocity.y);
+
+	CGameTrace Trace;
+	CTraceFilterWorldAndPropsOnly traceFilter;
+	Ray_t ray;
+	traceFilter.pSkip = pLocal;
+
+	float t;
+	for (t = 0.0f; t < maxTime; t += timeStep)
+	{
+		float along = alongVel * t;
+		float height = vecVelocity.z * t - 0.5f * g * t * t;
+
+		pos.x = vecSrc.x + alongDir.x * along;
+		pos.y = vecSrc.y + alongDir.y * along;
+		pos.z = vecSrc.z + height;
+
+		Utils::TraceHull(lastPos, pos, Vec3(-4.0f, -4.0f, -4.0f), Vec3(4.0f, 4.0f, 4.0f), MASK_SOLID_BRUSHONLY, &traceFilter, &Trace);
+		ray.Init(lastPos, pos, Vec3(-4.0f, -4.0f, -4.0f), Vec3(4.0f, 4.0f, 4.0f));
+		if (Trace.DidHit())
+		{
+	break;
+		}
+		
+		lastPos = pos;
+	}
+
+	return Trace.vEndPos;
+}
+
+
+Vector CAimbotProjectile::EstimateProjectileImpactPosition(float pitch, float yaw, CBaseCombatWeapon* weapon)
+{
+	if (!weapon)
+	{
+		return weapon->GetAbsOrigin();
+	}
+		float speedPipe = Utils::ATTRIB_HOOK_FLOAT(1200, "mult_projectile_speed", weapon, 0, 1);
+	const QAngle& angles = weapon->GetEyeAngles();
+
+	float initVel = G::CurItemDefIndex == (TF_WEAPON_PIPEBOMBLAUNCHER) ? 900.0f : speedPipe;
+	 initVel = Utils::ATTRIB_HOOK_FLOAT(1.0, "mult_projectile_range", weapon, 0, 1);
+
+	return EstimateProjectileImpactPosition(pitch, yaw, initVel);
+}
+
+
 bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Predictor_t& predictor, const ProjectileInfo_t& projInfo, Solution_t& out)
 {
 	const INetChannel* pNetChannel = I::EngineClient->GetNetChannelInfo();
