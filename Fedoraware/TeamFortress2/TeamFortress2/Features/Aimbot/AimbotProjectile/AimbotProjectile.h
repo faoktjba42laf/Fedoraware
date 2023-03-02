@@ -36,6 +36,9 @@ class CAimbotProjectile
 
 	std::optional<Vec3> GetAimPos(CBaseEntity* pLocal, CBaseEntity* pEntity, const Vec3& targetPredPos);
 	std::optional<Vec3> GetAimPosBuilding(CBaseEntity* pLocal, CBaseEntity* pEntity);
+	Vector EstimateProjectileImpactPosition(float pitch, float yaw, float initVel);
+// Vector EstimateStickybombProjectileImpactPosition(float pitch, float yaw, float charge, CBaseCombatWeapon* weapon); this is quite shit i wouldn't add it unless you amke it work
+Vector	EstimateProjectileImpactPosition(float pitch, float yaw, CBaseCombatWeapon* pWeapon);
 	bool WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, const Vec3& vPredictedPos, Solution_t& out, const ProjectileInfo_t& projInfo, const Predictor_t& predictor);
 	std::vector<Target_t> GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	bool VerifyTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Target_t& target);
