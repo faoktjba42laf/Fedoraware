@@ -65,6 +65,7 @@ namespace Vars
 		{
 			inline CVar<bool> Active{ false };
 			inline CVar<int> AimKey{ VK_XBUTTON1 };
+			inline CVar<float> AimFOV{ 15.0f };
 			inline CVar<bool> AutoShoot{ false };
 			inline CVar<bool> DontWaitForShot{ false };
 			inline CVar<bool> FlickatEnemies{ false };
@@ -81,10 +82,10 @@ namespace Vars
 			inline CVar<int> HitboxLifetime{ 2 };
 		}
 
+
 		namespace Hitscan
 		{
-			inline CVar<bool> Active{ false };
-			inline CVar<float> AimFOV{ 19.f };
+			//inline CVar<bool> Active			{ false };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
 			inline CVar<int> BackTrackMethod{ 0 };
 			inline CVar<bool> RespectFOV{ true };
@@ -109,8 +110,7 @@ namespace Vars
 
 		namespace Projectile
 		{
-			inline CVar<bool> Active{ false };
-			inline CVar<float> AimFOV{ 26.f };
+			//inline CVar<bool> Active			{ false };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
 			inline CVar<bool> RespectFOV{ true };
 			inline CVar<int> AimMethod{ 1 }; //0 - Normal,	1 - Silent
@@ -139,8 +139,7 @@ namespace Vars
 
 		namespace Melee
 		{
-			inline CVar<bool> Active{ false };
-			inline CVar<float> AimFOV{ 180.f };
+			//inline CVar<bool> Active			{ false };
 			inline CVar<int> SortMethod{ 1 }; //0 - FOV,		1 - Distance
 			inline CVar<bool> RespectFOV{ false };
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
