@@ -41,7 +41,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 		CBaseEntity* pTarget;
 
 		// Iterate through entities in sphere radius
-		for (CEntitySphereQuery sphere(pExplosive->GetWorldSpaceCenter(), radius);
+		for (CEntitySphereQuery sphere(pExplosive->GetWorldSpaceCenter(), radius);	//	this is a box by the way.
 			 (pTarget = sphere.GetCurrentEntity()) != nullptr;
 			 sphere.NextEntity())
 		{
@@ -50,6 +50,13 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 			{
 				continue;
 			}
+
+			const Vec3 vOrigin = pExplosive->GetWorldSpaceCenter();
+
+			Vec3 vPos{};
+			pTarget->GetCollision()->CalcNearestPoint(vOrigin, &vPos);
+
+			if ((vOrigin - vPos).Length() > radius) { continue; }	//	box fixed (somewhat)
 
 			const bool isPlayer = Vars::Triggerbot::Detonate::DetonateTargets.Value & (PLAYER) && pTarget->IsPlayer();
 			const bool isBuilding = Vars::Triggerbot::Detonate::DetonateTargets.Value & (BUILDING) && pTarget->IsBuilding();
@@ -66,9 +73,9 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 
 				CGameTrace trace = {};
 				CTraceFilterWorldAndPropsOnly traceFilter = {};
-				Utils::Trace(pExplosive->GetWorldSpaceCenter(), pTarget->GetWorldSpaceCenter(), MASK_SOLID, &traceFilter, &trace);
+				Utils::Trace(pExplosive->GetWorldSpaceCenter(), pTarget->GetWorldSpaceCenter(), MASK_SOLID_BRUSHONLY, &traceFilter, &trace);
 
-				if (trace.flFraction >= 0.99f || trace.entity == pTarget)
+				if (trace.flFraction == 1.f || trace.entity == pTarget)
 				{
 					if (G::CurItemDefIndex == Demoman_s_TheScottishResistance)
 					{	//	super fucking ghetto holy shit
