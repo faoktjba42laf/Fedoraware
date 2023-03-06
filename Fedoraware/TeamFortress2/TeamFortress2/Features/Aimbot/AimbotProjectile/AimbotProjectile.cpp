@@ -1005,12 +1005,14 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 
 	std::optional<float> splashRadius;
 
-	splashRadius = Utils::ATTRIB_HOOK_FLOAT(148, "mult_explosion_radius", pWeapon, 0, 1);
+	splashRadius = Utils::ATTRIB_HOOK_FLOAT(148, "mult_explosion_radius", pWeapon, 0, 1) * 0.9	;
 	float splashRadiusModified = splashRadius.value() * 0.8; //this value will only be used if you are blast jumping with the air strike
 
 	//check if you are rocket jumping, and change the value appropriately, because the air strike blast radius changes if you are rocket jumping.
 	if (pLocal->GetCondEx2() & TFCondEx2_BlastJumping && G::CurItemDefIndex == Soldier_m_TheAirStrike)
 		splashRadius = splashRadiusModified;
+
+	if (pLocal->GetClassNum() != ETFClass::CLASS_SOLDIER) { return false; }
 
 	// Don't do it with the direct hit or if the splash radius is unknown
 	if (pWeapon->GetClassID() == ETFClassID::CTFRocketLauncher_DirectHit || !splashRadius) { return false; }
@@ -1052,9 +1054,13 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 			if ((sortMethod == ESortMethod::FOV || Vars::Aimbot::Projectile::RespectFOV.Value) && flFOVTo > Vars::Aimbot::Global::AimFOV.Value) { continue; }
 
+			Vec3 vPos{};
+			pTarget->GetCollision()->CalcNearestPoint(scanPos, &vPos);
+			if ((scanPos - vPos).Length() > splashRadius) { continue; }
+
 			// Can the target receive splash damage? (Don't predict through walls)
-			Utils::Trace(scanPos, pTarget->GetWorldSpaceCenter(), MASK_SOLID, &traceFilter, &trace);
-			if (trace.flFraction < 0.99f && trace.entity != pTarget) { continue; }
+			Utils::Trace(scanPos, vPos, MASK_SOLID_BRUSHONLY, &traceFilter, &trace);
+			if (trace.flFraction == 1.f || trace.entity == pTarget) { continue; }
 
 			// Is the predicted position even visible?
 			if (!Utils::WillProjectileHit(pLocal, pWeapon, scanPos)) { continue; }
