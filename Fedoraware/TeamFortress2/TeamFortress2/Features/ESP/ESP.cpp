@@ -555,7 +555,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			//Distance ESP
 			if (Vars::ESP::Players::Distance.Value)
 			{				
-				if (Player != g_EntityCache.GetLocal())
+				if (Player != pLocal)
 				{
 					//this code sucks!!!
 					int offset = 0;
@@ -564,7 +564,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					else if (Vars::ESP::Players::WeaponIcon.Value) { offset = 25; }
 					weaponoffset += Vars::Fonts::FONT_ESP::nTall.Value;
 
-					const int Distance = std::round(flDistance / 52.49);
+					const int Distance = round(flDistance / 52.49);
 					g_Draw.String(FONT_ESP, x + (w / 2), y + h + weaponoffset + offset, Colors::White, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 				}
 			}
@@ -576,6 +576,20 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				int offset = g_Draw.m_vecFonts[FONT].nTall / 4;
 				std::vector<std::wstring> cond_strings = GetPlayerConds(Player);
 
+				int ping = cResource->GetPing(Player->GetIndex());
+				const INetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
+				if (!netChannel->IsLoopback()) // dont draw if in a local server, since every ping will be below 10 anyways, also reduces clutter 
+				{
+					if (Player != pLocal) // no reason to draw on local player
+					{
+						if ((ping >= 200 || ping <= 10) && ping != 0) // ping warning
+						{
+							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "%dMS", ping); //make it all caps so it matches with the condition esp
+							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
+						}
+					}
+				}
+
 				if (!cond_strings.empty())
 				{
 					for (auto& condString : cond_strings)
@@ -586,6 +600,17 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				}
 			}
 
+			if (Vars::ESP::Players::FriendText.Value)
+			{
+				if (Player != pLocal)
+				{
+					if (g_EntityCache.IsFriend(Player->GetIndex()))
+					{
+						g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Friend, ALIGN_DEFAULT, "FRIEND"); //make it all caps so it matches with the condition esp
+						nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
+					}
+				}
+			}
 
 			// Health bar
 			if (Vars::ESP::Players::HealthBar.Value)
@@ -847,7 +872,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 			//Distance ESP
 			if (Vars::ESP::Buildings::Distance.Value)
 			{
-				const int Distance = std::round(flDistance / 52.49);
+				const int Distance = round(flDistance / 52.49);
 				g_Draw.String(FONT_ESP, x + (w / 2), y + h, Colors::White, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 			}
 
@@ -1075,7 +1100,7 @@ void CESP::DrawWorld() const
 			//Distance ESP
 			if (Vars::ESP::World::HealthDistance.Value)
 			{
-				const int Distance = std::round(flDistance / 52.49); 
+				const int Distance = round(flDistance / 52.49); 
 				g_Draw.String(FONT_ESP, x + (w / 2), y + h, Colors::White, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 			}
 
@@ -1144,7 +1169,7 @@ void CESP::DrawWorld() const
 			//Distance ESP
 			if (Vars::ESP::World::AmmoDistance.Value)
 			{
-				const int Distance = std::round(flDistance / 52.49);
+				const int Distance = round(flDistance / 52.49);
 				g_Draw.String(FONT_ESP, x + (w / 2), y + h, Colors::White, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 			}
 
@@ -1251,7 +1276,7 @@ void CESP::DrawWorld() const
 			//Distance ESP
 			if (Vars::ESP::World::NPCDistance.Value)
 			{
-				const int Distance = std::round(flDistance / 52.49);
+				const int Distance = round(flDistance / 52.49);
 				g_Draw.String(FONT_ESP, x + (w / 2), y + h, Colors::White, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 			}
 
@@ -1342,7 +1367,7 @@ void CESP::DrawWorld() const
 
 			if (Vars::ESP::World::BombDistance.Value)
 			{
-				const int Distance = std::round(flDistance / 52.49);
+				const int Distance = round(flDistance / 52.49);
 				g_Draw.String(FONT_ESP, x + (w / 2), y + h, Colors::White, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 			}
 
