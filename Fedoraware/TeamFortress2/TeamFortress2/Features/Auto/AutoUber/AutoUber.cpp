@@ -115,33 +115,32 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		if (Utils::VisPos(pPatient, player, pPatient->GetHitboxPos(HITBOX_PELVIS),
 			player->GetEyePosition()))
 		{
-			if (const auto& pWeapon = player->GetActiveWeapon())
+		if (const auto& pWeapon = player->GetActiveWeapon())
 			{
-				if (player->GetClassNum() == CLASS_SPY && pWeapon->GetSlot() == SLOT_PRIMARY || player->GetClassNum() == CLASS_SCOUT || player->GetClassNum() == CLASS_HEAVY || player->GetClassNum() ==
-					CLASS_MEDIC || player->GetClassNum() == CLASS_SNIPER || player->GetClassNum() == CLASS_ENGINEER)
+			
+				if (pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro 
+					|| pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier 
+					|| pWeapon->GetSlot() == SLOT_PRIMARY 
+					|| pWeapon->GetClassID() == ETFClassID::CTFShotgun_HWG 
+					|| pWeapon->GetClassID() == ETFClassID::CTFPistol
+					|| pWeapon->GetClassID() == ETFClassID::CTFSMG)
 				{
-					if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 350.f ||
-						(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 600.f &&
-						(player->GetClassNum() == CLASS_SPY || player->GetClassNum() == CLASS_SCOUT || player->GetClassNum() == CLASS_HEAVY || player->GetClassNum() == CLASS_MEDIC || player->
-						GetClassNum() == CLASS_SNIPER || player->GetClassNum() == CLASS_ENGINEER)))
-					{
-						return 2;
-					}
-				}
-
-				if (pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro || pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier)
-				{
+					if (pWeapon->IsReadyToFire())
 					{
 						if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 50.f ||
 							(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 250.f && (
-							(pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro || pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier))))
+								(pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro
+								|| pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier
+									|| pWeapon->GetSlot() == SLOT_PRIMARY
+									|| pWeapon->GetClassID() == ETFClassID::CTFShotgun_HWG
+									|| pWeapon->GetClassID() == ETFClassID::CTFPistol
+									|| pWeapon->GetClassID() == ETFClassID::CTFSMG))))
 						{
 							return 2;
 						}
-
-						
 					}
 				}
+
 			}
 
 			anyEnemies = true;
