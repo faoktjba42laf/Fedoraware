@@ -164,6 +164,36 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			hasHitscan = true;
 		}
 	}
+	
+	for (const auto& pBuilding : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ENEMIES))
+	{
+		const auto& building = reinterpret_cast<CBaseObject*>(pBuilding);
+		const auto nType = static_cast<EBuildingType>(building->GetType());
+
+		if (nType == EBuildingType::DISPENSER || nType == EBuildingType::TELEPORTER)
+		{
+			continue;
+		}
+
+
+		if (building->GetSapped() || building->GetDisabled() || building->GetConstructed())
+		{
+			continue;
+		}
+
+		if (nType == EBuildingType::SENTRY)
+		{
+			if (Utils::VisPos(pPatient, pBuilding, pPatient->GetAbsOrigin(), pBuilding->GetAbsOrigin()))
+			{
+				if (pPatient->GetVecOrigin().DistTo(pBuilding->GetVecOrigin()) < 50 || pPatient->GetVecOrigin().DistTo(pBuilding->GetVecOrigin()) < 1200)
+				{
+
+					return 2;
+				}
+
+			}
+	    }
+	}
 
 	if (hasHitscan)
 	{
