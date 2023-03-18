@@ -20,28 +20,66 @@ int BulletDangerValue(CBaseEntity* pPatient)
 	// Find dangerous playes in other team
 	for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!player->IsAlive())
+		const auto& pWeaponr = player->GetActiveWeapon();
+		if (player->IsTaunting()
+			|| player->IsBonked()
+			|| player->GetFeignDeathReady()
+			|| player->IsCloaked()
+			|| player->IsInBumperKart()
+			|| player->IsAGhost()
+			|| pWeapon->GetSlot() == EWeaponSlots::SLOT_MELEE
+			|| !pWeaponr 
+			|| HAS_CONDITION(player, TFCond_Bonked)
+			|| player->GetDormant()
+			|| !player->IsAlive() 
+			|| player->GetClassNum() != CLASS_ENGINEER &&
+			player->GetClassNum() != CLASS_SCOUT &&
+			player->GetClassNum() != CLASS_HEAVY &&
+			player->GetClassNum() != CLASS_SNIPER)
 		{
 			continue;
 		}
-
-		if (player->GetDormant())
+		
+		switch (pWeapon->GetWeaponID())
+		{
+		case Soldier_m_RocketJumper:
+		case Demoman_s_StickyJumper:
+		case TF_WEAPON_PDA:
+		case TF_WEAPON_PDA_ENGINEER_BUILD:
+		case TF_WEAPON_PDA_ENGINEER_DESTROY:
+		case TF_WEAPON_PDA_SPY:
+		case TF_WEAPON_PDA_SPY_BUILD:
+		case TF_WEAPON_BUILDER:
+		case TF_WEAPON_INVIS:
+		case TF_WEAPON_BUFF_ITEM:
+		case Heavy_s_RoboSandvich:
+		case Heavy_s_Sandvich:
+		case Heavy_s_FestiveSandvich:
+		case Heavy_s_Fishcake:
+		case Heavy_s_TheDalokohsBar:
+		case Heavy_s_SecondBanana:
+		case TF_WEAPON_JAR:
+		case TF_WEAPON_JAR_MILK:
+		case TF_WEAPON_JAR_GAS:
+		case TF_WEAPON_GRENADE_JAR_GAS:
+		case TF_WEAPON_CLEAVER:
 		{
 			continue;
 		}
-
+		}
+		
 		switch (player->GetClassNum())
 		{
 			case 1: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 0)) { continue; }
 				  break; //	scout
 			case 2: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 7)) { continue; }
 				  break; //	sniper
-			case 3: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 1)) { continue; }
-				  break; //	soldier
+			//case 3: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 1)) { continue; }
+				//  break; //	soldier yea fix these it's useless just use the weapon class/id..
 			case 6: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 4)) { continue; }
 				  break; //	heavy
-			case 7: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 2)) { continue; }
-				  break; //	pyro
+			//case 7: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 2)) { continue; }
+				//  break; //	pyro yea fix these it's useless just use the weapon class/id..
 			case 8: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 8)) { continue; }
 				  break; //	spy
 			case 9: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 5)) { continue; }
@@ -49,27 +87,9 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			default: { continue; }
 		}
 
-		if (HAS_CONDITION(player, TFCond_Bonked))
-		{
-			return false;
-		}
+		
 
-		const auto& pWeapon = player->GetActiveWeapon();
-
-		if (!pWeapon)
-		{
-			return 0;
-		}
-
-		if (pWeapon->GetSlot() == SLOT_MELEE)
-		{
-			return false;
-		}
-
-		if (pWeapon->GetClassID() == ETFClassID::CTFLunchBox || pWeapon->GetClassID() == ETFClassID::CTFLunchBox_Drink || pWeapon->GetClassID() == ETFClassID::CTFWeaponPDA)
-		{
-			return false;
-		}
+		
 
 		// Ignore ignored players
 		if (F::AutoGlobal.ShouldIgnore(player)) { continue; }
@@ -114,17 +134,12 @@ int BulletDangerValue(CBaseEntity* pPatient)
 					{
 						if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 50.f ||
 							(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 250.f && (
-							(player->GetClassNum() == CLASS_PYRO))))
+							(pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro || pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier))))
 						{
 							return 2;
 						}
 
-						if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 50.f ||
-							(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 250.f && (
-							(player->GetClassNum() == CLASS_SOLDIER))))
-						{
-							return 2;
-						}
+						
 					}
 				}
 			}
@@ -137,32 +152,27 @@ int BulletDangerValue(CBaseEntity* pPatient)
 
 	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
-		if (pProjectile->GetVelocity().IsZero())
+			if (pProjectile->GetVelocity().IsZero() || pProjectile->GetTeamNum() == pPatient->GetTeamNum())
 		{
 			continue;
 		}
 
-		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum())
-		{
-			continue;
-		}
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Arrow &&
-			pProjectile->GetClassID() != ETFClassID::CTFProjectile_EnergyBall &&
-			pProjectile->GetClassID() != ETFClassID::CTFProjectile_EnergyRing
-			)
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_MechanicalArmOrb &&
+			pProjectile->GetClassID() != ETFClassID::CTEFireBullets &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_HealingBolt)
 		{
 			continue;
 		}
 
-		const Vec3 vPredicted = (pProjectile->GetAbsOrigin() + pProjectile->GetVelocity());
-		const float flHypPred = sqrtf(pPatient->GetVecOrigin().DistToSqr(vPredicted));
-		const float flHyp = sqrtf(pPatient->GetVecOrigin().DistToSqr(pProjectile->GetVecOrigin()));
-		if (flHypPred < flHyp && pPatient->GetVecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
+
+		if (pPatient->GetAbsOrigin().DistTo(pProjectile->GetAbsOrigin()) <= 275.f)
 		{
 			if (pProjectile->IsCritBoosted()) { return 2; }
 			hasHitscan = true;
 		}
+		// yo this is better
 	}
 	
 	for (const auto& pBuilding : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ENEMIES))
@@ -197,10 +207,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 
 	if (hasHitscan)
 	{
-		if (pPatient->GetHealth() < 449)
-		{
-			return 2;
-		}
+		return 2;
 	}
 
 	return (anyZoomedSnipers || anyEnemies) ? 1 : 0;
@@ -209,7 +216,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 int FireDangerValue(CBaseEntity* pPatient)
 {
 	int shouldSwitch = 0;
-
+       bool hasHitscan = false;
 	for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
 		if (!player->IsAlive())
@@ -227,16 +234,16 @@ int FireDangerValue(CBaseEntity* pPatient)
 			continue;
 		}
 
-		const auto& pPlayerWeapon = player->GetActiveWeapon();
+		//const auto& pPlayerWeapon = player->GetActiveWeapon();
 
-		if (!pPlayerWeapon)
-		{
-			return 0;
-		}
+		//if (!pPlayerWeapon)
+		//{
+		//	return 0;
+		//} not needd here.. 
 
-		if (pPlayerWeapon->GetClassID() == ETFClassID::CTFFlameThrower)
-		{
-			if (HAS_CONDITION(pPatient, TFCond_OnFire) && pPatient->GetHealth() < 250)
+		//if (pPlayerWeapon->GetClassID() == ETFClassID::CTFFlameThrower) why we shouldn't check if they have flame thrower 
+		//{ it will handicap us if they just use flare or other flame projectiles..
+			if (HAS_CONDITION(pPatient, TFCond_OnFire) && pPatient->GetHealth() < 250) // hp check is ok ig?
 			{
 				if (pPatient->GetClassNum() == CLASS_PYRO) { return 1; }
 				return 2;
@@ -244,7 +251,31 @@ int FireDangerValue(CBaseEntity* pPatient)
 
 			if (HAS_CONDITION(player, TFCondEx_PhlogUber)) { return 2; }
 			shouldSwitch = 1;
-		}
+		//}
+	}
+	
+		
+	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
+	{
+
+		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum()
+			|| pProjectile->GetVelocity().IsZero())
+			continue;
+
+		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_BallOfFire &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_Flare &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_JarGas &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_SpellFireball) 
+			continue;
+
+		if (pPatient->GetAbsOrigin().DistTo(pProjectile->GetAbsOrigin()) <= 275.f)
+			hasHitscan = true;
+	}
+
+
+	if (hasHitscan)
+	{
+		return (pPatient->GetClassNum() == CLASS_PYRO) ? 1 : 2;
 	}
 
 	return shouldSwitch;
@@ -256,49 +287,27 @@ int BlastDangerValue(CBaseEntity* pPatient)
 
 	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
-		if (hasRockets && !pProjectile->IsCritBoosted())
-		{
-			continue;
-		}
+		
 
-		if (pProjectile->GetVelocity().IsZero())
-		{
+		if (player->GetTeamNum() == pPatient->GetTeamNum()
+			|| player->GetVelocity().IsZero())
 			continue;
-		}
 
-		if (pProjectile->GetTouched()) // Ignore landed Stickies
-		{
+         if (player->GetClassID() != ETFClassID::CTFGrenadePipebombProjectile
+			&& player->GetClassID() != ETFClassID::CTFPipebombLauncher
+			&& player->GetClassID() != ETFClassID::CTFWeaponBaseGrenadeProj
+			&& player->GetClassID() != ETFClassID::CTFProjectile_SentryRocket
+			&& player->GetClassID() != ETFClassID::CTFProjectile_Rocket
+			&& player->GetClassID() != ETFClassID::CTFProjectile_SpellMeteorShower)
 			continue;
-		}
 
-		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum())
-		{
-			continue;
-		}
-
-		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Rocket &&
-			pProjectile->GetClassID() != ETFClassID::CTFProjectile_SentryRocket &&
-			pProjectile->GetClassID() != ETFClassID::CTFGrenadePipebombProjectile)
-		{
-			continue;
-		}
-
-		// Projectile is getting closer
-		if (pPatient->GetAbsOrigin().DistTo(pProjectile->GetAbsOrigin()) <= 275.f)
-		{
-			hasRockets = true;
-		}
+		if (pPatient->GetAbsOrigin().DistTo(player->GetAbsOrigin()) <= 275.f)
+			bIsRocket = true;
+	 // why do we ignore landed stickies like WTF?
 	}
 
-	if (hasRockets)
-	{
-		if (pPatient->GetHealth() < 235)
-		{
-			return 2;
-		}
-		return 1;
-	}
-
+	if (bIsRocket)
+	return (pPatient->GetHealth() < 450) ? 2 : 1;
 	return 0;
 }
 
