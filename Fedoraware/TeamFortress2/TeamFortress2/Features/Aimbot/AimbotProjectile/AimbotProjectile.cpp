@@ -590,6 +590,17 @@ std::optional<Vec3> CAimbotProjectile::GetAimPosBuilding(CBaseEntity* pLocal, CB
 	return std::nullopt;
 }
 
+bool CGameTrace::DidHitWorld() const
+{
+	return entity == I::ClientEntityList->GetClientEntity(0);
+}
+
+bool CGameTrace::DidHitNonWorldEntity() const
+{
+	return entity != NULL && !DidHitWorld();
+}
+
+
 bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, const Vec3& vPredictedPos, Solution_t& out, const ProjectileInfo_t& projInfo,
 										  const Predictor_t& predictor)
 {
@@ -698,7 +709,7 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 	//	UTIL_TraceHull( vecEye, vecSrc, -Vector(8,8,8), Vector(8,8,8), MASK_SOLID_BRUSHONLY, &traceFilter, &trace ); @tf_weaponbase_gun.cpp L696 pills
 	Utils::TraceHull(vVisCheck, vPredictedPos, hullSize * 1.01f, hullSize * -1.01f, MASK_SHOT_HULL, &traceFilter, &trace);
 
-	return !trace.DidHit() && trace.flFraction == 1.f;
+	return !trace.DidHitNonWorldEntity() && !trace.bStartSolid && trace.flFraction == 1.f;
 }
 
 std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
